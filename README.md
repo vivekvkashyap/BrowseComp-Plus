@@ -137,7 +137,7 @@ All three clients follow the same pattern. Pass `--query` with either:
 |---|---|---|
 | `--query` | Single question (in quotes) or path to TSV file | `topics-qrels/queries.tsv` |
 | `--model` | LLM model name | varies per client |
-| `--max-tokens` | Total output token budget across all iterations per query | `10000` |
+| `--max_tokens` | Total output token budget across all iterations per query | `10000` |
 | `--max-iterations` | Max conversation rounds (search/compact/answer) per query | `100` |
 | `--k` | Number of documents returned per search call | `5` |
 | `--snippet-max-tokens` | Max tokens per document snippet (truncation limit) | `512` |
@@ -172,7 +172,7 @@ All three clients follow the same pattern. Pass `--query` with either:
 - **`--max-iterations 100`** -- The agent can do up to 100 rounds of search/compact/think before being forced to stop. Most queries finish in 5-20 rounds.
 - **`--k 5`** -- Each `search()` call returns the top 5 documents from BM25.
 - **`--snippet-max-tokens 512`** -- Each document is truncated to 512 tokens. So one search returns ~2,500 tokens of content (5 docs x 512 tokens).
-- **`--max-tokens 10000`** -- The total output token budget for the entire agent run on one query. This covers the model's reasoning, tool calls, and final answer across all iterations. If exhausted, the agent stops.
+- **`--max_tokens 10000`** -- The total output token budget for the entire agent run on one query. This covers the model's reasoning, tool calls, and final answer across all iterations. If exhausted, the agent stops.
 - **`--compact-model`** -- When the agent calls `compact()`, a separate API call summarizes the conversation history using this model. Using a cheaper model here (e.g., `gpt-4o-mini`) saves cost while the main agent uses a stronger model.
 
 ---
@@ -192,7 +192,7 @@ python search_agent/openai_client.py \
   --query-template QUERY_TEMPLATE_WITH_COMPACT \
   --compact-model gpt-4o-mini \
   --output-dir runs/test_openai/ \
-  --max-tokens 10000 \
+  --max_tokens 10000 \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512
@@ -211,7 +211,7 @@ python search_agent/anthropic_client.py \
   --query-template QUERY_TEMPLATE_WITH_COMPACT \
   --compact-model claude-sonnet-4-20250514 \
   --output-dir runs/test_anthropic/ \
-  --max-tokens 10000 \
+  --max_tokens 10000 \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512
@@ -255,7 +255,7 @@ python search_agent/openai_client.py \
   --query-template QUERY_TEMPLATE_WITH_COMPACT \
   --compact-model gpt-4o-mini \
   --output-dir runs/bm25/gpt_4_1_compact/ \
-  --max-tokens 10000 \
+  --max_tokens 10000 \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
@@ -273,7 +273,7 @@ python search_agent/anthropic_client.py \
   --query-template QUERY_TEMPLATE_WITH_COMPACT \
   --compact-model claude-sonnet-4-20250514 \
   --output-dir runs/bm25/claude_compact/ \
-  --max-tokens 10000 \
+  --max_tokens 10000 \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
