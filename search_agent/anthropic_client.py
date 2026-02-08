@@ -346,6 +346,7 @@ def run_conversation_with_tools(
     stop_reason: Optional[str] = None
 
     # --- Trajectory: flat conversation log ---
+    
     trajectory: list[dict[str, Any]] = []
     if system_prompt:
         trajectory.append({"role": "system", "content": system_prompt})
