@@ -225,6 +225,17 @@ def main(args):
     rprint(final_response)
 
 
+def _serialize_content_block(block):
+    """Serialize an Anthropic content block to a JSON-safe dict."""
+    if isinstance(block, dict):
+        return block
+    if hasattr(block, "to_dict"):
+        return block.to_dict()
+    if hasattr(block, "model_dump"):
+        return block.model_dump(mode="python")
+    return str(block)
+
+
 def handle_complete_conversation(
     client,
     initial_request_body,
@@ -240,6 +251,12 @@ def handle_complete_conversation(
 
     pause_restarts = 0
 
+    # --- Trajectory: flat conversation log ---
+    trajectory: list[dict] = []
+    if initial_request_body.get("system"):
+        trajectory.append({"role": "system", "content": initial_request_body["system"]})
+    trajectory.append({"role": "user", "content": query_message.get("content", "")})
+
     try:
         for i in range(max_pause_attempts + 1):
             response = make_request_with_retry(
@@ -252,6 +269,10 @@ def handle_complete_conversation(
             previous_responses.append(
                 {"role": "assistant", "content": response.content}
             )
+
+            # Record this assistant turn in trajectory
+            serialized_blocks = [_serialize_content_block(b) for b in response.content]
+            trajectory.append({"role": "assistant", "content": serialized_blocks})
 
             if response.stop_reason != "pause_turn":
                 break
@@ -276,6 +297,7 @@ def handle_complete_conversation(
         query_id=query_id,
         pause_restarts=pause_restarts,
         store_raw=args.store_raw,
+        trajectory=trajectory,
     )
 
     return response
@@ -289,6 +311,7 @@ def _persist_response(
     query_id: str | None = None,
     pause_restarts: int = 0,
     store_raw: bool = False,
+    trajectory: list[dict] | None = None,
 ):
 
     os.makedirs(out_dir, exist_ok=True)
@@ -410,6 +433,8 @@ def _persist_response(
         "retrieved_docids": extract_retrieved_docids_from_result(results),
         "result": results,
     }
+
+    record["trajectory"] = trajectory or []
 
     if store_raw:
         record["raw_response"] = response_dict

@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 import openai
+from compact_utils import COMPACT_PROMPT, call_compact_openai, format_history_for_compact
 from prompts import format_query
 from rich import print as rprint
 from tqdm import tqdm
@@ -27,11 +28,13 @@ class SearchToolHandler:
         snippet_max_tokens: int | None = None,
         k: int = 5,
         include_get_document: bool = True,
+        include_compact: bool = False,
     ):
         self.searcher = searcher
         self.snippet_max_tokens = snippet_max_tokens
         self.k = k
         self.include_get_document = include_get_document
+        self.include_compact = include_compact
 
         self.tokenizer = None
         if snippet_max_tokens and snippet_max_tokens > 0:
@@ -73,6 +76,27 @@ class SearchToolHandler:
                             }
                         },
                         "required": ["docid"],
+                        "additionalProperties": False,
+                    },
+                    "strict": True,
+                }
+            )
+
+        if self.include_compact:
+            tools.append(
+                {
+                    "type": "function",
+                    "name": "compact",
+                    "description": (
+                        "Summarize and compact your conversation history to free up context space. "
+                        "Call this proactively when you have accumulated many search results and your "
+                        "context is getting long. This does NOT end your research — continue searching "
+                        "after compacting. Takes no arguments."
+                    ),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
                         "additionalProperties": False,
                     },
                     "strict": True,
@@ -173,10 +197,14 @@ def run_conversation_with_tools(
     initial_request: dict,
     tool_handler: SearchToolHandler,
     max_iterations: int = 100,
+    compact_model: str | None = None,
 ):
 
     input_messages = initial_request["input"].copy()
     global_max_tokens = initial_request["max_output_tokens"]
+
+    # Resolve compact model: default to the agent model
+    _compact_model = compact_model or initial_request.get("model", "gpt-4o-mini")
 
     cumulative_usage = {
         "input_tokens": 0,
@@ -189,6 +217,13 @@ def run_conversation_with_tools(
     combined_output = []
     tool_outputs = {}
     all_responses = []
+
+    # --- Trajectory: flat conversation log ---
+    trajectory: list[dict] = []
+    if initial_request.get("instructions"):
+        trajectory.append({"role": "system", "content": initial_request["instructions"]})
+    for msg in initial_request["input"]:
+        trajectory.append({"role": msg.get("role", "user"), "content": msg.get("content", "")})
 
     for iteration in range(max_iterations):
         # Calculate remaining tokens for this round
@@ -209,6 +244,10 @@ def run_conversation_with_tools(
 
         if hasattr(response, "output"):
             combined_output.extend(response.output)
+
+        # Record assistant turn in trajectory
+        response_items = [item.model_dump(mode="python") for item in response.output]
+        trajectory.append({"role": "assistant", "content": response_items})
 
         if hasattr(response, "usage") and response.usage:
             usage = response.usage
@@ -233,15 +272,75 @@ def run_conversation_with_tools(
         ]
 
         if not function_calls:
-            return response, combined_output, cumulative_usage, tool_outputs
+            return response, combined_output, cumulative_usage, tool_outputs, trajectory
 
         for item in response.output:
             serialized_item = item.model_dump(mode="python")
             if "status" in serialized_item:
                 del serialized_item["status"]
             input_messages.append(serialized_item)
+
         for tool_call in function_calls:
             try:
+                # ---- Handle compact tool ----
+                if tool_call.name == "compact":
+                    print(f"[Compact] Summarizing conversation history (iter {iteration + 1})…")
+                    history_text = format_history_for_compact(input_messages)
+                    summary = call_compact_openai(client, _compact_model, history_text)
+                    print(f"[Compact] Summary produced ({len(summary)} chars). Replacing history.")
+
+                    # Preserve the original user query (first message)
+                    original_user_msg = initial_request["input"][0]
+
+                    # Serialize the compact function_call item so the API
+                    # can match the function_call_output to it.
+                    serialized_compact_call = tool_call.model_dump(mode="python")
+                    if "status" in serialized_compact_call:
+                        del serialized_compact_call["status"]
+
+                    result = "Context compacted successfully. Your conversation history has been summarized. Continue your research."
+
+                    # Replace input_messages with: original query + summary
+                    # + the compact function_call + its output so the API
+                    # sees a valid (call, output) pair.
+                    input_messages = [
+                        original_user_msg,
+                        {
+                            "role": "developer",
+                            "content": (
+                                "The following is a summary of your prior research. "
+                                "Use it to continue your investigation without repeating "
+                                "previous searches.\n\n" + summary
+                            ),
+                        },
+                        serialized_compact_call,
+                        {
+                            "type": "function_call_output",
+                            "call_id": tool_call.call_id,
+                            "output": result,
+                        },
+                    ]
+
+                    tool_outputs[tool_call.id] = {
+                        "output": result,
+                        "status": "completed",
+                        "error": None,
+                    }
+
+                    # Record compact summary and tool result in trajectory
+                    trajectory.append({"role": "compact_summary", "content": summary})
+                    trajectory.append({
+                        "role": "tool",
+                        "tool_name": "compact",
+                        "call_id": tool_call.call_id,
+                        "content": result,
+                    })
+
+                    # Other function_call items from this response were
+                    # wiped; stop processing them to avoid orphaned outputs.
+                    break
+
+                # ---- Handle search / get_document tools ----
                 args = json.loads(tool_call.arguments)
                 result = tool_handler.execute_tool(tool_call.name, args)
 
@@ -258,6 +357,14 @@ def run_conversation_with_tools(
                         "output": result,
                     }
                 )
+
+                # Record tool result in trajectory
+                trajectory.append({
+                    "role": "tool",
+                    "tool_name": tool_call.name,
+                    "call_id": tool_call.call_id,
+                    "content": result,
+                })
 
             except Exception as e:
                 error_msg = f"Error executing {tool_call.name}: {str(e)}"
@@ -276,10 +383,19 @@ def run_conversation_with_tools(
                     }
                 )
 
+                # Record tool error in trajectory
+                trajectory.append({
+                    "role": "tool",
+                    "tool_name": tool_call.name,
+                    "call_id": tool_call.call_id,
+                    "content": error_msg,
+                    "error": True,
+                })
+
     print(f"Warning: Conversation hit max iterations ({max_iterations})")
 
     final_response = all_responses[-1] if all_responses else response
-    return final_response, combined_output, cumulative_usage, tool_outputs
+    return final_response, combined_output, cumulative_usage, tool_outputs, trajectory
 
 
 def _persist_response(
@@ -291,6 +407,7 @@ def _persist_response(
     tool_outputs: dict = None,
     *,
     query_id: str | None = None,
+    trajectory: list[dict] | None = None,
 ):
     """Persist request & response JSON for later inspection."""
 
@@ -382,6 +499,7 @@ def _persist_response(
                     normalized_results
                 ),
                 "result": normalized_results,
+                "trajectory": trajectory or [],
             },
             f,
             indent=2,
@@ -447,9 +565,10 @@ def _process_tsv_dataset(
         )
 
         try:
-            response, combined_output, cumulative_usage, tool_outputs = (
+            response, combined_output, cumulative_usage, tool_outputs, trajectory = (
                 run_conversation_with_tools(
-                    client, request_body, tool_handler, args.max_iterations
+                    client, request_body, tool_handler, args.max_iterations,
+                    compact_model=getattr(args, "compact_model", None),
                 )
             )
 
@@ -467,6 +586,7 @@ def _process_tsv_dataset(
                 cumulative_usage,
                 tool_outputs,
                 query_id=qid,
+                trajectory=trajectory,
             )
 
         except Exception as exc:
@@ -527,6 +647,8 @@ def main():
             "QUERY_TEMPLATE",
             "QUERY_TEMPLATE_NO_GET_DOCUMENT",
             "QUERY_TEMPLATE_NO_GET_DOCUMENT_NO_CITATION",
+            "QUERY_TEMPLATE_WITH_COMPACT",
+            "QUERY_TEMPLATE_WITH_COMPACT_AND_GET_DOCUMENT",
         ],
         default="QUERY_TEMPLATE_NO_GET_DOCUMENT",
         help="Specify the query template to use (default: %(default)s)",
@@ -588,6 +710,12 @@ def main():
         help="If set, register both the search tool and the get_document tool.",
     )
     parser.add_argument(
+        "--compact-model",
+        type=str,
+        default=None,
+        help="Model to use for the compact (summarization) tool. Defaults to the same as --model.",
+    )
+    parser.add_argument(
         "--hf-token",
         type=str,
         help="Hugging Face token for accessing private datasets/models. If not provided, will use environment variables or CLI login.",
@@ -621,16 +749,25 @@ def main():
 
     searcher = searcher_class(args)
 
+    # Determine if compact tool should be enabled based on query template
+    enable_compact = args.query_template in (
+        "QUERY_TEMPLATE_WITH_COMPACT",
+        "QUERY_TEMPLATE_WITH_COMPACT_AND_GET_DOCUMENT",
+    ) or args.compact_model is not None
+
     tool_handler = SearchToolHandler(
         searcher=searcher,
         snippet_max_tokens=args.snippet_max_tokens,
         k=args.k,
         include_get_document=args.get_document,
+        include_compact=enable_compact,
     )
 
     tools_registered = ["search"]
     if args.get_document:
         tools_registered.append("get_document")
+    if enable_compact:
+        tools_registered.append("compact")
     tools_str = ", ".join(tools_registered)
 
     print(
@@ -664,9 +801,10 @@ def main():
     )
 
     print("Sending request to OpenAI Responses API with function calling...")
-    response, combined_output, cumulative_usage, tool_outputs = (
+    response, combined_output, cumulative_usage, tool_outputs, trajectory = (
         run_conversation_with_tools(
-            client, request_body, tool_handler, args.max_iterations
+            client, request_body, tool_handler, args.max_iterations,
+            compact_model=args.compact_model,
         )
     )
 
@@ -678,6 +816,7 @@ def main():
         cumulative_usage,
         tool_outputs,
         query_id=None,
+        trajectory=trajectory,
     )
 
     rprint(response)

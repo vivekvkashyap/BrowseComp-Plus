@@ -31,6 +31,32 @@ Exact Answer: {{your succinct, final answer}}
 Confidence: {{your confidence score between 0% and 100% for your answer}}
 """.strip()
 
+QUERY_TEMPLATE_WITH_COMPACT = """
+You are a deep research agent. You need to answer the given question by interacting with a search engine, using the search tool provided. Please perform reasoning and use the tool step by step, in an interleaved manner. You may use the search tool multiple times.
+
+You also have access to a "compact" tool. This tool summarizes your conversation history to free up context space. Call it proactively when you have accumulated many search results and feel your context is getting long. Using compact does NOT end your research — you should continue searching after compacting.
+
+Question: {Question}
+
+Your response should be in the following format:
+Explanation: {{your explanation for your final answer. For this explanation section only, you should cite your evidence documents inline by enclosing their docids in square brackets [] at the end of sentences. For example, [20].}}
+Exact Answer: {{your succinct, final answer}}
+Confidence: {{your confidence score between 0% and 100% for your answer}}
+""".strip()
+
+QUERY_TEMPLATE_WITH_COMPACT_AND_GET_DOCUMENT = """
+You are a deep research agent. You need to answer the given question by interacting with a search engine, using the search and get_document tools provided. Please perform reasoning and use the tools step by step, in an interleaved manner. You may use the search and get_document tools multiple times.
+
+You also have access to a "compact" tool. This tool summarizes your conversation history to free up context space. Call it proactively when you have accumulated many search results and feel your context is getting long. Using compact does NOT end your research — you should continue searching after compacting.
+
+Question: {Question}
+
+Your response should be in the following format:
+Explanation: {{your explanation for your final answer. For this explanation section only, you should cite your evidence documents inline by enclosing their docids in square brackets [] at the end of sentences. For example, [20].}}
+Exact Answer: {{your succinct, final answer}}
+Confidence: {{your confidence score between 0% and 100% for your answer}}
+""".strip()
+
 QUERY_TEMPLATE_ORACLE = """
 I will give you a question and a set of evidence documents, which contains all the necessary information to answer the question. You need to reason and answer the question based on these evidence documents, step by step.
 
@@ -128,5 +154,9 @@ def format_query(query: str, query_template: str | None = None) -> str:
         return QUERY_TEMPLATE_NO_GET_DOCUMENT.format(Question=query)
     elif query_template == "QUERY_TEMPLATE_NO_GET_DOCUMENT_NO_CITATION":
         return QUERY_TEMPLATE_NO_GET_DOCUMENT_NO_CITATION.format(Question=query)
+    elif query_template == "QUERY_TEMPLATE_WITH_COMPACT":
+        return QUERY_TEMPLATE_WITH_COMPACT.format(Question=query)
+    elif query_template == "QUERY_TEMPLATE_WITH_COMPACT_AND_GET_DOCUMENT":
+        return QUERY_TEMPLATE_WITH_COMPACT_AND_GET_DOCUMENT.format(Question=query)
     else:
         raise ValueError(f"Unknown query template: {query_template}")
