@@ -19,6 +19,7 @@ from utils import extract_retrieved_docids_from_result
 from transformers import AutoTokenizer
 from compact_utils import call_compact_openai, format_history_for_compact
 from prompts import format_query
+from wandb_logger import WandbLogger
 
 
 class SearchToolHandler:
@@ -371,7 +372,7 @@ def run_conversation_with_tools(
     return normalized_results, cumulative_usage, finish_reason, trajectory, summarizer_usage
 
 
-def _persist_response(out_dir: str, *, model: str, query_id: str | None, system_prompt: str | None, max_tokens: int, normalized_results: list[dict[str, Any]], cumulative_usage: dict, finish_reason: Optional[str], trajectory: list[dict[str, Any]] | None = None, summarizer_usage: dict | None = None):
+def _persist_response(out_dir: str, *, model: str, query_id: str | None, system_prompt: str | None, max_tokens: int, normalized_results: list[dict[str, Any]], cumulative_usage: dict, finish_reason: Optional[str], trajectory: list[dict[str, Any]] | None = None, summarizer_usage: dict | None = None, wandb_logger=None, searcher_type: str | None = None):
     os.makedirs(out_dir, exist_ok=True)
 
     tool_call_counts: dict[str, int] = {}
@@ -414,8 +415,43 @@ def _persist_response(out_dir: str, *, model: str, query_id: str | None, system_
 
     print("Saved response to", filename, "| tool call counts:", tool_call_counts)
 
+    # Log to W&B if enabled
+    if wandb_logger:
+        retrieved_docids = extract_retrieved_docids_from_result(normalized_results)
+        
+        # Prepare full instance data for artifact storage
+        full_instance_data = {
+            "metadata": {
+                "model": model,
+                "output_dir": str(out_dir),
+                "max_tokens": max_tokens,
+            },
+            "query_id": query_id,
+            "tool_call_counts": tool_call_counts,
+            "usage": normalized_usage,
+            "status": status,
+            "retrieved_docids": retrieved_docids,
+            "result": normalized_results,
+            "trajectory": trajectory or [],
+            "summarizer_usage": summarizer_usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "num_calls": 0},
+        }
+        
+        wandb_logger.log_instance(
+            query_id=query_id,
+            model=model,
+            searcher_type=searcher_type or "unknown",
+            tool_call_counts=tool_call_counts,
+            usage=normalized_usage,
+            summarizer_usage=summarizer_usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "num_calls": 0},
+            status=status,
+            retrieved_docids=retrieved_docids,
+            trajectory=trajectory,
+            json_file=filename,
+            full_instance_data=full_instance_data,
+        )
 
-def _process_tsv_dataset(tsv_path: str, client: OpenAI, args, tool_handler: SearchToolHandler):
+
+def _process_tsv_dataset(tsv_path: str, client: OpenAI, args, tool_handler: SearchToolHandler, wandb_logger=None):
     dataset_path = Path(tsv_path)
     if not dataset_path.is_file():
         raise FileNotFoundError(f"TSV file not found: {tsv_path}")
@@ -487,6 +523,8 @@ def _process_tsv_dataset(tsv_path: str, client: OpenAI, args, tool_handler: Sear
                 finish_reason=finish_reason,
                 trajectory=traj,
                 summarizer_usage=sum_usage,
+                wandb_logger=wandb_logger,
+                searcher_type=args.searcher_type,
             )
         except Exception as exc:
             print(f"[Error] Query id={qid} failed: {exc}")
@@ -502,6 +540,10 @@ def _process_tsv_dataset(tsv_path: str, client: OpenAI, args, tool_handler: Sear
             futures = [executor.submit(_handle_single_query, qid, qtext, pbar) for qid, qtext in remaining]
             for _ in as_completed(futures):
                 pbar.update(1)
+
+    # Finalize W&B logging
+    if wandb_logger:
+        wandb_logger.finish()
 
 
 def main():
@@ -569,6 +611,32 @@ def main():
         help="Hugging Face home directory for caching models and datasets. If not provided, will use environment variables or default.",
     )
 
+    # W&B logging configuration
+    parser.add_argument(
+        "--wandb-project",
+        type=str,
+        default="browsecomp-evaluation",
+        help="W&B project name (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--wandb-entity",
+        type=str,
+        default=None,
+        help="W&B entity/team name (optional)",
+    )
+    parser.add_argument(
+        "--wandb-tags",
+        type=str,
+        nargs="+",
+        default=None,
+        help="W&B tags for the run (space-separated)",
+    )
+    parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help="Disable W&B logging",
+    )
+
     temp_args, _ = parser.parse_known_args()
     searcher_class = SearcherType.get_searcher_class(temp_args.searcher_type)
     searcher_class.parse_args(parser)
@@ -589,6 +657,37 @@ def main():
         raise RuntimeError("ZAI_API_KEY is not set in environment")
 
     client = OpenAI(api_key=api_key, base_url="https://api.z.ai/api/coding/paas/v4/")
+
+    # Initialize W&B logger
+    wandb_logger = None
+    if not args.no_wandb:
+        tags = args.wandb_tags or []
+        # Create logs directory for this run
+        log_dir = os.path.join(args.output_dir, "wandb_logs")
+        wandb_logger = WandbLogger(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            tags=tags,
+            enabled=True,
+            log_dir=log_dir,
+        )
+        if wandb_logger.enabled:
+            # Initialize run with experiment config
+            config = {
+                "model": args.model,
+                "searcher_type": args.searcher_type,
+                "max_tokens": args.max_tokens,
+                "k": args.k,
+                "snippet_max_tokens": args.snippet_max_tokens,
+                "query_template": args.query_template,
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+                "max_iterations": args.max_iterations,
+                "get_document": args.get_document,
+                "compact_model": args.compact_model,
+            }
+            wandb_logger.init_run(config)
+            wandb_logger.log_message(f"Starting evaluation run with {args.model} on {args.searcher_type}")
 
     searcher = searcher_class(args)
 
@@ -625,7 +724,7 @@ def main():
             potential_path = Path(qstr)
             try:
                 if potential_path.is_file():
-                    _process_tsv_dataset(str(potential_path), client, args, tool_handler)
+                    _process_tsv_dataset(str(potential_path), client, args, tool_handler, wandb_logger)
                     return
             except OSError:
                 pass
@@ -656,7 +755,13 @@ def main():
         finish_reason=finish_reason,
         trajectory=trajectory,
         summarizer_usage=sum_usage,
+        wandb_logger=wandb_logger,
+        searcher_type=args.searcher_type,
     )
+
+    # Finalize W&B logging
+    if wandb_logger:
+        wandb_logger.finish()
 
     # Print final output text if present
     final_texts = [item["output"] for item in normalized_results if item.get("type") == "output_text"]

@@ -1,0 +1,7 @@
+{"time":"2026-02-09T18:55:41.294834001+05:30","level":"INFO","msg":"stream: starting","core version":"0.24.2"}
+{"time":"2026-02-09T18:55:41.787088405+05:30","level":"INFO","msg":"stream: created new stream","id":"bn2odutb"}
+{"time":"2026-02-09T18:55:41.787231021+05:30","level":"INFO","msg":"handler: started","stream_id":"bn2odutb"}
+{"time":"2026-02-09T18:55:41.787477686+05:30","level":"INFO","msg":"stream: started","id":"bn2odutb"}
+{"time":"2026-02-09T18:55:41.787504188+05:30","level":"INFO","msg":"writer: started","stream_id":"bn2odutb"}
+{"time":"2026-02-09T18:55:41.787503954+05:30","level":"INFO","msg":"sender: started","stream_id":"bn2odutb"}
+{"time":"2026-02-09T18:56:00.304585028+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":2}

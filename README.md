@@ -151,6 +151,10 @@ All three clients follow the same pattern. Pass `--query` with either:
 | `--system` | Optional system prompt override | none |
 | `--temperature` | Sampling temperature | model default |
 | `--top_p` | Top-p sampling | model default |
+| `--wandb-project` | W&B project name for logging | `browsecomp-evaluation` |
+| `--wandb-entity` | W&B entity/team name (optional) | none |
+| `--wandb-tags` | Space-separated tags for W&B run | none |
+| `--no-wandb` | Disable W&B logging | W&B enabled |
 
 **OpenAI-only:**
 
@@ -167,6 +171,15 @@ All three clients follow the same pattern. Pass `--query` with either:
 | `--max-rate-limit-retries` | Retries on rate-limit errors | `5` |
 | `--rate-limit-delay` | Delay (seconds) between retries | `60` |
 
+**W&B Logging (all clients):**
+
+| Argument | What it does | Default |
+|---|---|---|
+| `--wandb-project` | W&B project name | `browsecomp-evaluation` |
+| `--wandb-entity` | W&B entity/team name | none (uses default) |
+| `--wandb-tags` | Space-separated tags for the run | none |
+| `--no-wandb` | Disable W&B logging | W&B enabled |
+
 ### What the key arguments mean
 
 - **`--max-iterations 100`** -- The agent can do up to 100 rounds of search/compact/think before being forced to stop. Most queries finish in 5-20 rounds.
@@ -174,6 +187,94 @@ All three clients follow the same pattern. Pass `--query` with either:
 - **`--snippet-max-tokens 512`** -- Each document is truncated to 512 tokens. So one search returns ~2,500 tokens of content (5 docs x 512 tokens).
 - **`--max_tokens 10000`** -- The total output token budget for the entire agent run on one query. This covers the model's reasoning, tool calls, and final answer across all iterations. If exhausted, the agent stops.
 - **`--compact-model`** -- When the agent calls `compact()`, a separate API call summarizes the conversation history using this model. Using a cheaper model here (e.g., `gpt-4o-mini`) saves cost while the main agent uses a stronger model.
+
+---
+
+## Weights & Biases (W&B) Logging
+
+BrowseComp-Plus includes built-in support for logging evaluation runs to [Weights & Biases](https://wandb.ai/). This enables tracking metrics, visualizing results, and comparing different runs.
+
+### Setup
+
+1. **Install W&B** (already included in dependencies):
+   ```bash
+   pip install wandb
+   ```
+
+2. **Login to W&B** (first time only):
+   ```bash
+   wandb login
+   ```
+   Or set the `WANDB_API_KEY` environment variable.
+
+### What Gets Logged
+
+For each instance (query), W&B tracks:
+- **Tool call counts**: Number of `search`, `get_document`, and `compact` calls
+- **Token usage**: Input tokens, output tokens, cached tokens, reasoning tokens
+- **Summarizer usage**: Separate tracking for compact tool calls
+- **Status**: Completion status (completed, tool_use, etc.)
+- **Retrieved documents**: Count of retrieved document IDs
+- **Trajectory**: Full conversation history for each instance
+
+All instance-level data is stored in a **W&B Table** that can be queried, filtered, and analyzed in the W&B UI.
+
+### Usage Examples
+
+**Basic usage** (uses default project `browsecomp-evaluation`):
+```bash
+python search_agent/anthropic_client.py \
+  --query topics-qrels/queries.tsv \
+  --model claude-sonnet-4-20250514 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --output-dir runs/bm25/claude/
+```
+
+**Custom project and tags**:
+```bash
+python search_agent/openai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model gpt-4.1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --output-dir runs/bm25/gpt_4_1/ \
+  --wandb-project my-evaluation-project \
+  --wandb-entity my-team \
+  --wandb-tags production bm25 gpt-4.1
+```
+
+**Disable W&B logging**:
+```bash
+python search_agent/glm_zai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model glm-4.6 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --output-dir runs/bm25/glm/ \
+  --no-wandb
+```
+
+### Viewing Results in W&B
+
+1. Go to [wandb.ai](https://wandb.ai) and navigate to your project
+2. Each run shows:
+   - **Metrics**: Per-instance tool calls, token usage, etc.
+   - **Tables**: Queryable table with all instance-level data
+   - **Trajectories**: Full conversation logs for each query
+   - **Summary**: Aggregate statistics across all instances
+
+3. Use W&B's filtering and grouping features to:
+   - Compare different models or configurations
+   - Analyze token usage patterns
+   - Identify queries with high tool call counts
+   - Track evaluation progress over time
+
+### Notes
+
+- W&B logging is **optional** - existing JSON file logging continues to work unchanged
+- If W&B is unavailable or not logged in, the script continues without W&B (graceful degradation)
+- All instance data is logged both to JSON files (for local analysis) and W&B (for visualization)
 
 ---
 
@@ -297,6 +398,203 @@ python search_agent/glm_zai_client.py \
   --snippet-max-tokens 512 \
   --num-threads 4
 ```
+
+---
+
+## Weights & Biases (W&B) Logging
+
+All three client scripts support optional logging to [Weights & Biases](https://wandb.ai/home) for tracking evaluation runs, metrics, and instance-level data.
+
+### Setup
+
+1. Install W&B (already included in dependencies):
+   ```bash
+   pip install wandb
+   ```
+
+2. Login to W&B (one-time setup):
+   ```bash
+   wandb login
+   ```
+   Or set the `WANDB_API_KEY` environment variable.
+
+### Team Collaboration Setup
+
+When working in a team, use the `--wandb-entity` flag to log results to a **shared team workspace**. This allows all team members to view and compare results in the same W&B project.
+
+1. **Create or join a team** on [wandb.ai/home](https://wandb.ai/home):
+   - Go to your W&B dashboard
+   - Create a team/organization or get invited to an existing one
+   - Note your team name (e.g., `my-research-team`)
+
+2. **Use the team entity** when running experiments:
+   ```bash
+   --wandb-entity your-team-name
+   ```
+
+3. **All team members** should use the same entity name to log to the shared workspace.
+
+**Example for team usage:**
+```bash
+python search_agent/openai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model gpt-4.1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-entity my-research-team \
+  --wandb-tags team-run experiment-1 \
+  --output-dir runs/bm25/gpt_4_1_compact/
+```
+
+This logs all results to `my-research-team/browsecomp-evaluation`, making them visible to all team members with access.
+
+### W&B Arguments
+
+| Argument | What it does | Default |
+|---|---|---|
+| `--wandb-project` | W&B project name | `browsecomp-evaluation` |
+| `--wandb-entity` | W&B entity/team name (optional) | none |
+| `--wandb-tags` | Space-separated tags for the run | none |
+| `--no-wandb` | Disable W&B logging | W&B enabled by default |
+
+### What Gets Logged
+
+**Per-instance metrics:**
+- Tool call counts (search, get_document, compact)
+- Token usage (input, output, cached, reasoning tokens)
+- Summarizer usage (separate tracking for compact tool)
+- Status (completed/failed/truncated)
+- Retrieved document count
+- Trajectory length (number of conversation turns)
+
+**W&B Tables:**
+- Instance-level data table with all metrics queryable in W&B UI
+- Full conversation trajectories for each instance
+
+**Run-level metrics:**
+- Total instances processed
+- Aggregate statistics
+
+### Usage Examples
+
+#### Single Query with W&B
+
+**OpenAI:**
+```bash
+python search_agent/openai_client.py \
+  --query "What is the capital of France?" \
+  --model gpt-4o-mini \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test single-query \
+  --output-dir runs/test_openai/
+```
+
+**Anthropic:**
+```bash
+python search_agent/anthropic_client.py \
+  --query "What is the capital of France?" \
+  --model claude-sonnet-4-20250514 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test single-query \
+  --output-dir runs/test_anthropic/
+```
+
+**GLM (Z.AI):**
+```bash
+python search_agent/glm_zai_client.py \
+  --query "What is the capital of France?" \
+  --model glm-4.6 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test single-query \
+  --output-dir runs/test_glm/
+```
+
+#### Full Dataset with W&B
+
+**OpenAI:**
+```bash
+python search_agent/openai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model gpt-4.1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-entity your-team-name \
+  --wandb-tags full-dataset bm25 gpt-4.1 \
+  --output-dir runs/bm25/gpt_4_1_compact/ \
+  --num-threads 4
+```
+
+**Anthropic:**
+```bash
+python search_agent/anthropic_client.py \
+  --query topics-qrels/queries.tsv \
+  --model claude-sonnet-4-20250514 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-entity your-team-name \
+  --wandb-tags full-dataset bm25 claude-sonnet-4 \
+  --output-dir runs/bm25/claude_compact/ \
+  --num-threads 4
+```
+
+**GLM (Z.AI):**
+```bash
+python search_agent/glm_zai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model glm-4.6 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-entity your-team-name \
+  --wandb-tags full-dataset bm25 glm-4.6 \
+  --output-dir runs/bm25/glm_compact/ \
+  --num-threads 4
+```
+
+#### Disable W&B Logging
+
+To disable W&B logging (useful for local testing or when W&B is unavailable):
+
+```bash
+python search_agent/openai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model gpt-4.1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --no-wandb \
+  --output-dir runs/bm25/gpt_4_1_compact/
+```
+
+### Viewing Results in W&B
+
+1. Go to [wandb.ai/home](https://wandb.ai/home) and navigate to your project
+   - **Personal workspace**: `https://wandb.ai/your-username/browsecomp-evaluation`
+   - **Team workspace**: `https://wandb.ai/team-name/browsecomp-evaluation`
+
+2. Each run shows:
+   - **Metrics**: Per-instance tool calls, token usage, success rates
+   - **Tables**: Queryable instance-level data with all metrics
+   - **Trajectories**: Full conversation history for each instance
+   - **Config**: Experiment configuration (model, searcher type, etc.)
+
+3. **Team collaboration features**:
+   - Compare runs across different team members
+   - Filter by tags to see specific experiments
+   - Export tables for analysis
+   - Share run links with team members
+
+The W&B Tables allow you to filter, sort, and analyze instances by any metric (e.g., "show all instances with >10 search calls" or "instances that failed").
+
+**Pro tip for teams:** Use consistent tagging conventions (e.g., `--wandb-tags member-name model-version date`) to make it easy to find and compare team members' experiments.
 
 ---
 

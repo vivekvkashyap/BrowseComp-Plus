@@ -1,0 +1,77 @@
+{
+  "os": "Linux-5.15.0-139-generic-x86_64-with-glibc2.35",
+  "python": "CPython 3.10.19",
+  "startedAt": "2026-02-09T13:23:38.730761Z",
+  "args": [
+    "--query",
+    "topics-qrels/queries.tsv",
+    "--model",
+    "glm-4.7",
+    "--searcher-type",
+    "bm25",
+    "--index-path",
+    "indexes/bm25/",
+    "--query-template",
+    "QUERY_TEMPLATE_WITH_COMPACT",
+    "--output-dir",
+    "runs/bm25/glm_compact_2/",
+    "--max_tokens",
+    "10000",
+    "--max-iterations",
+    "100",
+    "--k",
+    "5",
+    "--snippet-max-tokens",
+    "512",
+    "--num-threads",
+    "4",
+    "--wandb-project",
+    "dummy_run_browsecomp_eval",
+    "--wandb-entity",
+    "dynamic_compact",
+    "--wandb-tags",
+    "dummy_rum"
+  ],
+  "program": "/home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/search_agent/glm_zai_client.py",
+  "codePath": "search_agent/glm_zai_client.py",
+  "codePathLocal": "search_agent/glm_zai_client.py",
+  "git": {
+    "remote": "https://github.com/vivekvkashyap/BrowseComp-Plus.git",
+    "commit": "7fb87fd7bf7acaebca0010d74b18f26a219333b5"
+  },
+  "email": "vivekvkashyap10@gmail.com",
+  "root": "/home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus",
+  "host": "system4",
+  "executable": "/home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/.venv/bin/python",
+  "cpu_count": 16,
+  "cpu_count_logical": 32,
+  "gpu": "NVIDIA RTX A6000",
+  "gpu_count": 2,
+  "disk": {
+    "/": {
+      "total": "997724282880",
+      "used": "857891037184"
+    }
+  },
+  "memory": {
+    "total": "133640568832"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA RTX A6000",
+      "memoryTotal": "51527024640",
+      "cudaCores": 10752,
+      "architecture": "Ampere",
+      "uuid": "GPU-412f6e7e-e204-e4f0-2562-2c4e7090e756"
+    },
+    {
+      "name": "NVIDIA RTX A6000",
+      "memoryTotal": "51527024640",
+      "cudaCores": 10752,
+      "architecture": "Ampere",
+      "uuid": "GPU-adf5c0b6-fc02-d499-0343-c9a6f3340c52"
+    }
+  ],
+  "cudaVersion": "12.6",
+  "writerId": "1ywoxex1ectp2fsylqvqyvtky1wn2buu"
+}

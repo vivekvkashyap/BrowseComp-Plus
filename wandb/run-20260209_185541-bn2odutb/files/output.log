@@ -1,0 +1,56 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Search agent started with BM25 search (snippet_max_tokens=512, k=5)
+Registered tools: search, compact
+Processing 830 remaining queries (skipping 0) from topics-qrels/queries.tsv ...
+Queries:   0%|                                                           | 0/830 [00:00<?, ?query/s]Token indices sequence length is longer than the specified maximum sequence length for this model (170004 > 131072). Running this sequence through the model will result in indexing errors
+Queries:   0%|▏                                   | 3/830 [00:18<1:07:57,  4.93s/query, completed=3][34m[1mwandb[0m: [33mWARNING[0m Tried to log to step 1 that is less than the current step 2. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132557536792Z.json | tool call counts: {'search': 5}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132558403065Z.json | tool call counts: {'search': 3}
+[Compact] Summarizing conversation history (iter 5)…
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132601764085Z.json | tool call counts: {'search': 4}
+[Compact] Summary produced (2264 chars). Replacing history.
+[Compact] Summarizing conversation history (iter 4)…
+[Compact] Summarizing conversation history (iter 6)…
+[Compact] Summary produced (1485 chars). Replacing history.
+Queries:   3%|▊                                 | 21/830 [04:06<2:43:22, 12.12s/query, completed=15]
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132613702714Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132615431850Z.json | tool call counts: {'search': 7, 'compact': 1}
+[Compact] Summary produced (2174 chars). Replacing history.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132623750137Z.json | tool call counts: {'search': 6, 'compact': 1}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132631885341Z.json | tool call counts: {'search': 5}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132650081739Z.json | tool call counts: {'search': 5}
+[Error] Query id=774 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 197706, Requested 12207. Please try again in 2.973s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summarizing conversation history (iter 4)…
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132714484746Z.json | tool call counts: {'search': 4}
+[Compact] Summary produced (1516 chars). Replacing history.
+[Error] Query id=781 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 194355, Requested 25198. Please try again in 5.865s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132752193522Z.json | tool call counts: {'search': 4}
+[Compact] Summarizing conversation history (iter 3)…
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132801267410Z.json | tool call counts: {'search': 4}
+[Compact] Summary produced (1732 chars). Replacing history.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132807362694Z.json | tool call counts: {'search': 6}
+[Compact] Summarizing conversation history (iter 4)…
+[Error] Query id=785 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 195156, Requested 17929. Please try again in 3.925s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summary produced (2172 chars). Replacing history.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132833688298Z.json | tool call counts: {'search': 5, 'compact': 1}
+[Compact] Summarizing conversation history (iter 4)…
+[Compact] Summary produced (1539 chars). Replacing history.
+[Error] Query id=791 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 191308, Requested 11682. Please try again in 897ms. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summarizing conversation history (iter 5)…
+[Compact] Summary produced (2418 chars). Replacing history.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132929831025Z.json | tool call counts: {'search': 7, 'compact': 1}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T132936390984Z.json | tool call counts: {'search': 5}
+[Error] Query id=790 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 184615, Requested 18281. Please try again in 868ms. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summarizing conversation history (iter 4)…
+[Error] Query id=793 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 191380, Requested 20076. Please try again in 3.436s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summarizing conversation history (iter 5)…
+[Compact] Summary produced (2449 chars). Replacing history.
+[Compact] Summary produced (2198 chars). Replacing history.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133012379946Z.json | tool call counts: {'search': 6, 'compact': 1}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133014597143Z.json | tool call counts: {'search': 6, 'compact': 1}
+[Error] Query id=798 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 195394, Requested 11292. Please try again in 2.005s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summarizing conversation history (iter 4)…
+[Error] Query id=800 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 193404, Requested 14470. Please try again in 2.362s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Compact] Summary produced (1957 chars). Replacing history.

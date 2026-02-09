@@ -1,0 +1,16 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Search agent started with BM25 search (snippet_max_tokens=512, k=5)
+Registered tools: search
+Processing 830 remaining queries (skipping 0) from topics-qrels/queries.tsv ...
+Queries:   0%|                                                           | 0/830 [00:00<?, ?query/s]Token indices sequence length is longer than the specified maximum sequence length for this model (220752 > 131072). Running this sequence through the model will result in indexing errors
+Queries:   0%|                                    | 2/830 [00:17<1:41:26,  7.35s/query, completed=2][34m[1mwandb[0m: [33mWARNING[0m Tried to log to step 1 that is less than the current step 3. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134151849803Z.json | tool call counts: {'search': 3}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134155617563Z.json | tool call counts: {'search': 5}
+[34m[1mwandb[0m: [33mWARNING[0m Tried to log to step 2 that is less than the current step 3. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Queries:   1%|▎                                     | 6/830 [00:31<54:17,  3.95s/query, completed=6]
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134201347083Z.json | tool call counts: {'search': 6}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134203236411Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134206654425Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134210002404Z.json | tool call counts: {'search': 5}

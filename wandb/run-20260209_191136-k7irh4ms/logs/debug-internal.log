@@ -1,0 +1,16 @@
+{"time":"2026-02-09T19:11:36.41893989+05:30","level":"INFO","msg":"stream: starting","core version":"0.24.2"}
+{"time":"2026-02-09T19:11:36.938624534+05:30","level":"INFO","msg":"stream: created new stream","id":"k7irh4ms"}
+{"time":"2026-02-09T19:11:36.938748158+05:30","level":"INFO","msg":"handler: started","stream_id":"k7irh4ms"}
+{"time":"2026-02-09T19:11:36.938970429+05:30","level":"INFO","msg":"stream: started","id":"k7irh4ms"}
+{"time":"2026-02-09T19:11:36.939003374+05:30","level":"INFO","msg":"writer: started","stream_id":"k7irh4ms"}
+{"time":"2026-02-09T19:11:36.939030606+05:30","level":"INFO","msg":"sender: started","stream_id":"k7irh4ms"}
+{"time":"2026-02-09T19:11:51.854783356+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:11:51.855279283+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:11:51.855618259+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:11:51.856041237+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:11:54.902934996+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:11:55.627228671+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}
+{"time":"2026-02-09T19:11:55.628302242+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}
+{"time":"2026-02-09T19:11:55.629400088+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}
+{"time":"2026-02-09T19:11:55.630291157+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}
+{"time":"2026-02-09T19:11:56.254988672+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}

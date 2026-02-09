@@ -1,0 +1,12 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Search agent started with BM25 search [1m([0m[33msnippet_max_tokens[0m=[1;36m512[0m, [33mk[0m=[1;36m5[0m[1m)[0m
+Registered tools: search, compact
+Processing [1;36m725[0m remaining queries [1m([0mskipping [1;36m105[0m[1m)[0m from topics-qrels/queries.tsv [33m...[0m
+Queries:   0%|                                                 | 1/725 [00:06<1:20:44,  6.69s/query]Token indices sequence length is longer than the specified maximum sequence length for this model (152048 > 131072). Running this sequence through the model will result in indexing errors
+[1m[[0mError[1m][0m Query [33mid[0m=[1;36m983[0m failed: Error code: [1;36m429[0m - [1m{[0m[32m'error'[0m: [1m{[0m[32m'code'[0m: [32m'1302'[0m, [32m'message'[0m: [32m'Rate limit [0m
+[32mreached for requests'[0m[1m}[0m[1m}[0m
+[1m[[0mError[1m][0m Query [33mid[0m=[1;36m984[0m failed: Error code: [1;36m429[0m - [1m{[0m[32m'error'[0m: [1m{[0m[32m'code'[0m: [32m'1302'[0m, [32m'message'[0m: [32m'Rate limit [0m
+[32mreached for requests'[0m[1m}[0m[1m}[0m
+Queries:   0%|▏                                                | 2/725 [00:19<2:07:16, 10.56s/query]

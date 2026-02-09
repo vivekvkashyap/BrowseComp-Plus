@@ -1,0 +1,10 @@
+{"time":"2026-02-09T19:12:52.725131903+05:30","level":"INFO","msg":"stream: starting","core version":"0.24.2"}
+{"time":"2026-02-09T19:12:53.219926363+05:30","level":"INFO","msg":"stream: created new stream","id":"b825exqg"}
+{"time":"2026-02-09T19:12:53.220089548+05:30","level":"INFO","msg":"handler: started","stream_id":"b825exqg"}
+{"time":"2026-02-09T19:12:53.220334023+05:30","level":"INFO","msg":"stream: started","id":"b825exqg"}
+{"time":"2026-02-09T19:12:53.220392405+05:30","level":"INFO","msg":"writer: started","stream_id":"b825exqg"}
+{"time":"2026-02-09T19:12:53.220392967+05:30","level":"INFO","msg":"sender: started","stream_id":"b825exqg"}
+{"time":"2026-02-09T19:13:10.191106146+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:13:14.364031972+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":1,"current":3}
+{"time":"2026-02-09T19:13:23.610918419+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}
+{"time":"2026-02-09T19:13:24.279780391+05:30","level":"WARN","msg":"handler: ignoring partial history record","step":2,"current":3}

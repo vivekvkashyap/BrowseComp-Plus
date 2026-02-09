@@ -1,0 +1,15 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Search agent started with BM25 search (snippet_max_tokens=512, k=5)
+Registered tools: search
+Processing 824 remaining queries (skipping 6) from topics-qrels/queries.tsv ...
+Queries:   0%|                                                           | 0/824 [00:00<?, ?query/s]Token indices sequence length is longer than the specified maximum sequence length for this model (302434 > 131072). Running this sequence through the model will result in indexing errors
+Queries:   0%|                                              | 0/824 [00:14<?, ?query/s, completed=1][34m[1mwandb[0m: [33mWARNING[0m Tried to log to step 1 that is less than the current step 3. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134310181161Z.json | tool call counts: {'search': 4}
+Queries:   0%|                                    | 1/824 [00:27<4:14:19, 18.54s/query, completed=2][34m[1mwandb[0m: [33mWARNING[0m Tried to log to step 2 that is less than the current step 3. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134323601253Z.json | tool call counts: {'search': 5}
+Queries:   1%|▏                                   | 5/824 [00:46<1:46:56,  7.84s/query, completed=4]
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134325439784Z.json | tool call counts: {'search': 5}
+[Error] Query id=776 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 195158, Requested 14303. Please try again in 2.838s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact_1/run_20260209T134342016547Z.json | tool call counts: {'search': 3}

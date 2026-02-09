@@ -1,0 +1,25 @@
+[34m[1mwandb[0m: Detected [openai] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+Search agent started with BM25 search (snippet_max_tokens=512, k=5)
+Registered tools: search
+Processing 813 remaining queries (skipping 17) from topics-qrels/queries.tsv ...
+Queries:   0%|                                                           | 0/813 [00:00<?, ?query/s]Token indices sequence length is longer than the specified maximum sequence length for this model (251333 > 131072). Running this sequence through the model will result in indexing errors
+Queries:   2%|▋                                 | 17/813 [02:27<1:36:55,  7.31s/query, completed=12]
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133558540674Z.json | tool call counts: {'search': 3}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133601998453Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133614806242Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133616447511Z.json | tool call counts: {'search': 8}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133632452728Z.json | tool call counts: {'search': 3}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133634822161Z.json | tool call counts: {'search': 5}
+[Error] Query id=791 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 188495, Requested 17064. Please try again in 1.667s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133652413250Z.json | tool call counts: {'search': 3}
+[Error] Query id=800 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 200000, Requested 17168. Please try again in 5.15s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133705564290Z.json | tool call counts: {'search': 5}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133713280474Z.json | tool call counts: {'search': 5}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133736612340Z.json | tool call counts: {'search': 4}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133744271270Z.json | tool call counts: {'search': 4}
+[Error] Query id=811 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 194208, Requested 8873. Please try again in 924ms. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Error] Query id=806 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 194441, Requested 14671. Please try again in 2.733s. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+[Error] Query id=810 failed: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-4o-mini in organization org-TvHAJsbwWcWWzlWwgdMkgTjH on tokens per min (TPM): Limit 200000, Used 183504, Requested 17029. Please try again in 159ms. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}
+Saved response to /home/ece/Pavan/vivek_3/min_verify/BrowseComp-Plus/runs/bm25/gpt4o_mini_compact/run_20260209T133817566488Z.json | tool call counts: {'search': 6}

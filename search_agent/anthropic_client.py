@@ -29,6 +29,7 @@ from transformers import AutoTokenizer
 from utils import extract_retrieved_docids_from_result
 
 from searcher.searchers import SearcherType
+from wandb_logger import WandbLogger
 
 
 # ---------------------------------------------------------------------------
@@ -617,6 +618,8 @@ def _persist_response(
     trajectory: list[dict[str, Any]] | None = None,
     thinking_config: dict | None = None,
     summarizer_usage: dict | None = None,
+    wandb_logger: Optional[WandbLogger] = None,
+    searcher_type: Optional[str] = None,
 ):
     os.makedirs(out_dir, exist_ok=True)
 
@@ -664,6 +667,42 @@ def _persist_response(
 
     print("Saved response to", filename, "| tool call counts:", tool_call_counts)
 
+    # Log to W&B if enabled
+    if wandb_logger:
+        retrieved_docids = extract_retrieved_docids_from_result(normalized_results)
+        
+        # Prepare full instance data for artifact storage
+        full_instance_data = {
+            "metadata": {
+                "model": model,
+                "output_dir": str(out_dir),
+                "max_tokens": max_tokens,
+                "thinking": thinking_config,
+            },
+            "query_id": query_id,
+            "tool_call_counts": tool_call_counts,
+            "usage": normalized_usage,
+            "status": status,
+            "retrieved_docids": retrieved_docids,
+            "result": normalized_results,
+            "trajectory": trajectory or [],
+            "summarizer_usage": summarizer_usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "num_calls": 0},
+        }
+        
+        wandb_logger.log_instance(
+            query_id=query_id,
+            model=model,
+            searcher_type=searcher_type or "unknown",
+            tool_call_counts=tool_call_counts,
+            usage=normalized_usage,
+            summarizer_usage=summarizer_usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "num_calls": 0},
+            status=status,
+            retrieved_docids=retrieved_docids,
+            trajectory=trajectory,
+            json_file=filename,
+            full_instance_data=full_instance_data,
+        )
+
 
 # ---------------------------------------------------------------------------
 # TSV dataset processing
@@ -671,7 +710,7 @@ def _persist_response(
 
 
 def _process_tsv_dataset(
-    tsv_path: str, client: Anthropic, args, tool_handler: SearchToolHandler
+    tsv_path: str, client: Anthropic, args, tool_handler: SearchToolHandler, wandb_logger: Optional[WandbLogger] = None
 ):
     dataset_path = Path(tsv_path)
     if not dataset_path.is_file():
@@ -753,6 +792,8 @@ def _process_tsv_dataset(
                 trajectory=traj,
                 thinking_config=thinking_config,
                 summarizer_usage=sum_usage,
+                wandb_logger=wandb_logger,
+                searcher_type=args.searcher_type,
             )
 
         except Exception as exc:
@@ -775,6 +816,10 @@ def _process_tsv_dataset(
 
             for _ in as_completed(futures):
                 pbar.update(1)
+
+    # Finalize W&B logging
+    if wandb_logger:
+        wandb_logger.finish()
 
 
 # ---------------------------------------------------------------------------
@@ -913,6 +958,32 @@ def main():
         help="Hugging Face home directory for caching models and datasets.",
     )
 
+    # W&B logging configuration
+    parser.add_argument(
+        "--wandb-project",
+        type=str,
+        default="browsecomp-evaluation",
+        help="W&B project name (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--wandb-entity",
+        type=str,
+        default=None,
+        help="W&B entity/team name (optional)",
+    )
+    parser.add_argument(
+        "--wandb-tags",
+        type=str,
+        nargs="+",
+        default=None,
+        help="W&B tags for the run (space-separated)",
+    )
+    parser.add_argument(
+        "--no-wandb",
+        action="store_true",
+        help="Disable W&B logging",
+    )
+
     # Dynamic searcher args
     temp_args, _ = parser.parse_known_args()
     searcher_class = SearcherType.get_searcher_class(temp_args.searcher_type)
@@ -948,6 +1019,39 @@ def main():
             "type": "enabled",
             "budget_tokens": args.thinking_budget,
         }
+
+    # Initialize W&B logger
+    wandb_logger = None
+    if not args.no_wandb:
+        tags = args.wandb_tags or []
+        # Create logs directory for this run
+        log_dir = os.path.join(args.output_dir, "wandb_logs")
+        wandb_logger = WandbLogger(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            tags=tags,
+            enabled=True,
+            log_dir=log_dir,
+        )
+        if wandb_logger.enabled:
+            # Initialize run with experiment config
+            config = {
+                "model": args.model,
+                "searcher_type": args.searcher_type,
+                "max_tokens": args.max_tokens,
+                "k": args.k,
+                "snippet_max_tokens": args.snippet_max_tokens,
+                "query_template": args.query_template,
+                "temperature": args.temperature,
+                "top_p": args.top_p,
+                "max_iterations": args.max_iterations,
+                "get_document": args.get_document,
+                "compact_model": args.compact_model,
+                "thinking_enabled": thinking_enabled,
+                "thinking_budget": args.thinking_budget if thinking_enabled else None,
+            }
+            wandb_logger.init_run(config)
+            wandb_logger.log_message(f"Starting evaluation run with {args.model} on {args.searcher_type}")
 
     # Initialize searcher
     searcher = searcher_class(args)
@@ -985,7 +1089,7 @@ def main():
             potential_path = Path(qstr)
             try:
                 if potential_path.is_file():
-                    _process_tsv_dataset(str(potential_path), client, args, tool_handler)
+                    _process_tsv_dataset(str(potential_path), client, args, tool_handler, wandb_logger)
                     return
             except OSError:
                 pass
@@ -1021,7 +1125,13 @@ def main():
         trajectory=trajectory,
         thinking_config=thinking_config,
         summarizer_usage=sum_usage,
+        wandb_logger=wandb_logger,
+        searcher_type=args.searcher_type,
     )
+
+    # Finalize W&B logging
+    if wandb_logger:
+        wandb_logger.finish()
 
     # Print final output text if present
     final_texts = [item["output"] for item in normalized_results if item.get("type") == "output_text"]
