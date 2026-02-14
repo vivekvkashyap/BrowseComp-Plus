@@ -122,15 +122,25 @@ After this, the index lives at `./indexes/bm25/`.
 export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."
 export ZAI_API_KEY="..."
+
+# For Bedrock: configure AWS credentials
+export AWS_ACCESS_KEY_ID="..."
+export AWS_SECRET_ACCESS_KEY="..."
+export AWS_DEFAULT_REGION="us-east-1"
+
+# For W&B logging (optional):
+# wandb login
 ```
 
 ---
 
 ## Running the Agent
 
-All three clients follow the same pattern. Pass `--query` with either:
+All clients follow the same pattern. Pass `--query` with either:
 - A **single question** in quotes (for testing)
 - A **path to the TSV file** (for running the full 830-query dataset)
+
+W&B logging is enabled by default. Add `--no-wandb` to disable, or `--wandb-entity your-team` for a shared team workspace. First-time W&B setup: `pip install wandb && wandb login`.
 
 ### Arguments Reference
 
@@ -152,40 +162,21 @@ All three clients follow the same pattern. Pass `--query` with either:
 | `--system` | Optional system prompt override | none |
 | `--temperature` | Sampling temperature | model default |
 | `--top_p` | Top-p sampling | model default |
-| `--wandb-project` | W&B project name for logging | `browsecomp-evaluation` |
-| `--wandb-entity` | W&B entity/team name (optional) | none |
-| `--wandb-tags` | Space-separated tags for W&B run | none |
-| `--no-wandb` | Disable W&B logging | W&B enabled |
-
-**OpenAI-only:**
-
-| Argument | What it does | Default |
-|---|---|---|
-| `--reasoning-effort` | `low`, `medium`, `high` (for o-series models) | none |
-
-**Anthropic-only:**
-
-| Argument | What it does | Default |
-|---|---|---|
-| `--no-thinking` | Disable extended thinking | thinking enabled |
-| `--thinking-budget` | Token budget for extended thinking | `8192` |
-| `--max-rate-limit-retries` | Retries on rate-limit errors | `5` |
-| `--rate-limit-delay` | Delay (seconds) between retries | `60` |
-
-**Bedrock-only:**
-
-| Argument | What it does | Default |
-|---|---|---|
-| `--region` | AWS region for Bedrock | `us-east-1` |
-
-**W&B Logging (all clients):**
-
-| Argument | What it does | Default |
-|---|---|---|
 | `--wandb-project` | W&B project name | `browsecomp-evaluation` |
-| `--wandb-entity` | W&B entity/team name | none (uses default) |
-| `--wandb-tags` | Space-separated tags for the run | none |
+| `--wandb-entity` | W&B entity/team name | none |
+| `--wandb-tags` | Space-separated tags for the W&B run | none |
 | `--no-wandb` | Disable W&B logging | W&B enabled |
+
+**Client-specific:**
+
+| Argument | Client | What it does | Default |
+|---|---|---|---|
+| `--reasoning-effort` | OpenAI | `low`, `medium`, `high` (o-series) | none |
+| `--no-thinking` | Anthropic | Disable extended thinking | thinking enabled |
+| `--thinking-budget` | Anthropic | Token budget for extended thinking | `8192` |
+| `--max-rate-limit-retries` | Anthropic | Retries on rate-limit errors | `5` |
+| `--rate-limit-delay` | Anthropic | Delay (seconds) between retries | `60` |
+| `--region` | Bedrock | AWS region for Bedrock | `us-east-1` |
 
 ### What the key arguments mean
 
@@ -197,101 +188,11 @@ All three clients follow the same pattern. Pass `--query` with either:
 
 ---
 
-## Weights & Biases (W&B) Logging
-
-BrowseComp-Plus includes built-in support for logging evaluation runs to [Weights & Biases](https://wandb.ai/). This enables tracking metrics, visualizing results, and comparing different runs.
-
-### Setup
-
-1. **Install W&B** (already included in dependencies):
-   ```bash
-   pip install wandb
-   ```
-
-2. **Login to W&B** (first time only):
-   ```bash
-   wandb login
-   ```
-   Or set the `WANDB_API_KEY` environment variable.
-
-### What Gets Logged
-
-For each instance (query), W&B tracks:
-- **Tool call counts**: Number of `search`, `get_document`, and `compact` calls
-- **Token usage**: Input tokens, output tokens, cached tokens, reasoning tokens
-- **Summarizer usage**: Separate tracking for compact tool calls
-- **Status**: Completion status (completed, tool_use, etc.)
-- **Retrieved documents**: Count of retrieved document IDs
-- **Trajectory**: Full conversation history for each instance
-
-All instance-level data is stored in a **W&B Table** that can be queried, filtered, and analyzed in the W&B UI.
-
-### Usage Examples
-
-**Basic usage** (uses default project `browsecomp-evaluation`):
-```bash
-python search_agent/anthropic_client.py \
-  --query topics-qrels/queries.tsv \
-  --model claude-sonnet-4-20250514 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --output-dir runs/bm25/claude/
-```
-
-**Custom project and tags**:
-```bash
-python search_agent/openai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model gpt-4.1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --output-dir runs/bm25/gpt_4_1/ \
-  --wandb-project my-evaluation-project \
-  --wandb-entity my-team \
-  --wandb-tags production bm25 gpt-4.1
-```
-
-**Disable W&B logging**:
-```bash
-python search_agent/glm_zai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model glm-4.6 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --output-dir runs/bm25/glm/ \
-  --no-wandb
-```
-
-### Viewing Results in W&B
-
-1. Go to [wandb.ai](https://wandb.ai) and navigate to your project
-2. Each run shows:
-   - **Metrics**: Per-instance tool calls, token usage, etc.
-   - **Tables**: Queryable table with all instance-level data
-   - **Trajectories**: Full conversation logs for each query
-   - **Summary**: Aggregate statistics across all instances
-
-3. Use W&B's filtering and grouping features to:
-   - Compare different models or configurations
-   - Analyze token usage patterns
-   - Identify queries with high tool call counts
-   - Track evaluation progress over time
-
-### Notes
-
-- W&B logging is **optional** - existing JSON file logging continues to work unchanged
-- If W&B is unavailable or not logged in, the script continues without W&B (graceful degradation)
-- All instance data is logged both to JSON files (for local analysis) and W&B (for visualization)
-
----
-
-## Quick Test (Single Query)
+## Single Query Test
 
 ### OpenAI
 
 ```bash
-source .venv/bin/activate
-
 python search_agent/openai_client.py \
   --query "What is the capital of France?" \
   --model gpt-4o-mini \
@@ -301,16 +202,14 @@ python search_agent/openai_client.py \
   --compact-model gpt-4o-mini \
   --output-dir runs/test_openai/ \
   --max_tokens 10000 \
-  --max-iterations 100 \
   --k 5 \
-  --snippet-max-tokens 512
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test openai
 ```
 
 ### Anthropic
 
 ```bash
-source .venv/bin/activate
-
 python search_agent/anthropic_client.py \
   --query "What is the capital of France?" \
   --model claude-sonnet-4-20250514 \
@@ -320,16 +219,14 @@ python search_agent/anthropic_client.py \
   --compact-model claude-sonnet-4-20250514 \
   --output-dir runs/test_anthropic/ \
   --max_tokens 10000 \
-  --max-iterations 100 \
   --k 5 \
-  --snippet-max-tokens 512
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test anthropic
 ```
 
 ### GLM (Z.AI)
 
 ```bash
-source .venv/bin/activate
-
 python search_agent/glm_zai_client.py \
   --query "What is the capital of France?" \
   --model glm-4.6 \
@@ -339,21 +236,14 @@ python search_agent/glm_zai_client.py \
   --compact-model glm-4.6 \
   --output-dir runs/test_glm/ \
   --max_tokens 20000 \
-  --max-iterations 100 \
   --k 5 \
-  --snippet-max-tokens 512
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test glm
 ```
 
 ### AWS Bedrock
 
 ```bash
-source .venv/bin/activate
-
-# Ensure AWS credentials are configured (via environment variables or AWS CLI)
-# export AWS_ACCESS_KEY_ID=your_access_key
-# export AWS_SECRET_ACCESS_KEY=your_secret_key
-# export AWS_SESSION_TOKEN=your_session_token  # (optional)
-
 python search_agent/bedrock_client.py \
   --query "What is the capital of France?" \
   --model anthropic.claude-3-haiku-20240307-v1:0 \
@@ -364,18 +254,18 @@ python search_agent/bedrock_client.py \
   --compact-model anthropic.claude-3-haiku-20240307-v1:0 \
   --output-dir runs/test_bedrock/ \
   --max_tokens 10000 \
-  --max-iterations 100 \
   --k 5 \
-  --snippet-max-tokens 512
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags test bedrock
 ```
+
+> Bedrock requires AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`). Other models: `anthropic.claude-3-sonnet-20240229-v1:0`, `anthropic.claude-3-5-sonnet-20240620-v1:0`.
 
 ---
 
 ## Full Dataset (830 Queries)
 
-Just point `--query` at the TSV file. The script processes all queries and saves one JSON per query in the output directory.
-
-**Resume support:** If a run is interrupted, re-run the same command. It automatically skips already-completed queries by checking existing JSONs in the output directory.
+Point `--query` at the TSV file. The script saves one JSON per query and **automatically resumes** if interrupted.
 
 ### OpenAI
 
@@ -392,7 +282,9 @@ python search_agent/openai_client.py \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
-  --num-threads 4
+  --num-threads 4 \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags full-dataset bm25 gpt-4.1
 ```
 
 ### Anthropic
@@ -410,7 +302,9 @@ python search_agent/anthropic_client.py \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
-  --num-threads 4
+  --num-threads 4 \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags full-dataset bm25 claude-sonnet-4
 ```
 
 ### GLM (Z.AI)
@@ -428,13 +322,14 @@ python search_agent/glm_zai_client.py \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
-  --num-threads 4
+  --num-threads 4 \
+  --wandb-project browsecomp-evaluation \
+  --wandb-tags full-dataset bm25 glm-4.6
 ```
 
 ### AWS Bedrock
 
 ```bash
-# Ensure AWS credentials are configured
 python search_agent/bedrock_client.py \
   --query topics-qrels/queries.tsv \
   --model anthropic.claude-3-haiku-20240307-v1:0 \
@@ -448,296 +343,12 @@ python search_agent/bedrock_client.py \
   --max-iterations 100 \
   --k 5 \
   --snippet-max-tokens 512 \
-  --num-threads 4
-```
-
-**Alternative models:**
-- Sonnet: `anthropic.claude-3-sonnet-20240229-v1:0`
-- Opus: `anthropic.claude-3-opus-20240229-v1:0`
-- Latest Sonnet: `anthropic.claude-3-5-sonnet-20240620-v1:0`
-
-**Note:** Ensure AWS credentials are set:
-```bash
-export AWS_ACCESS_KEY_ID=your_access_key
-export AWS_SECRET_ACCESS_KEY=your_secret_key
-export AWS_DEFAULT_REGION=us-east-1
-```
-
----
-
-## Weights & Biases (W&B) Logging
-
-All three client scripts support optional logging to [Weights & Biases](https://wandb.ai/home) for tracking evaluation runs, metrics, and instance-level data.
-
-### Setup
-
-1. Install W&B (already included in dependencies):
-   ```bash
-   pip install wandb
-   ```
-
-2. Login to W&B (one-time setup):
-   ```bash
-   wandb login
-   ```
-   Or set the `WANDB_API_KEY` environment variable.
-
-### Team Collaboration Setup
-
-When working in a team, use the `--wandb-entity` flag to log results to a **shared team workspace**. This allows all team members to view and compare results in the same W&B project.
-
-1. **Create or join a team** on [wandb.ai/home](https://wandb.ai/home):
-   - Go to your W&B dashboard
-   - Create a team/organization or get invited to an existing one
-   - Note your team name (e.g., `my-research-team`)
-
-2. **Use the team entity** when running experiments:
-   ```bash
-   --wandb-entity your-team-name
-   ```
-
-3. **All team members** should use the same entity name to log to the shared workspace.
-
-**Example for team usage:**
-```bash
-python search_agent/openai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model gpt-4.1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
+  --num-threads 4 \
   --wandb-project browsecomp-evaluation \
-  --wandb-entity my-research-team \
-  --wandb-tags team-run experiment-1 \
-  --output-dir runs/bm25/gpt_4_1_compact/
+  --wandb-tags full-dataset bm25 bedrock-haiku
 ```
 
-This logs all results to `my-research-team/browsecomp-evaluation`, making them visible to all team members with access.
-
-### W&B Arguments
-
-| Argument | What it does | Default |
-|---|---|---|
-| `--wandb-project` | W&B project name | `browsecomp-evaluation` |
-| `--wandb-entity` | W&B entity/team name (optional) | none |
-| `--wandb-tags` | Space-separated tags for the run | none |
-| `--no-wandb` | Disable W&B logging | W&B enabled by default |
-
-### What Gets Logged
-
-**Per-instance metrics:**
-- Tool call counts (search, get_document, compact)
-- Token usage (input, output, cached, reasoning tokens)
-- Summarizer usage (separate tracking for compact tool)
-- Status (completed/failed/truncated)
-- Retrieved document count
-- Trajectory length (number of conversation turns)
-
-**W&B Tables:**
-- Instance-level data table with all metrics queryable in W&B UI
-- Full conversation trajectories for each instance
-
-**Run-level metrics:**
-- Total instances processed
-- Aggregate statistics
-
-### Usage Examples
-
-#### Single Query with W&B
-
-**OpenAI:**
-```bash
-python search_agent/openai_client.py \
-  --query "What is the capital of France?" \
-  --model gpt-4o-mini \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-tags test single-query \
-  --output-dir runs/test_openai/
-```
-
-**Anthropic:**
-```bash
-python search_agent/anthropic_client.py \
-  --query "What is the capital of France?" \
-  --model claude-sonnet-4-20250514 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-tags test single-query \
-  --output-dir runs/test_anthropic/
-```
-
-**GLM (Z.AI):**
-```bash
-python search_agent/glm_zai_client.py \
-  --query "What is the capital of France?" \
-  --model glm-4.6 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-tags test single-query \
-  --output-dir runs/test_glm/
-```
-
-#### Full Dataset with W&B
-
-**OpenAI:**
-```bash
-python search_agent/openai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model gpt-4.1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-entity your-team-name \
-  --wandb-tags full-dataset bm25 gpt-4.1 \
-  --output-dir runs/bm25/gpt_4_1_compact/ \
-  --num-threads 4
-```
-
-**Anthropic:**
-```bash
-python search_agent/anthropic_client.py \
-  --query topics-qrels/queries.tsv \
-  --model claude-sonnet-4-20250514 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-entity your-team-name \
-  --wandb-tags full-dataset bm25 claude-sonnet-4 \
-  --output-dir runs/bm25/claude_compact/ \
-  --num-threads 4
-```
-
-**GLM (Z.AI):**
-```bash
-python search_agent/glm_zai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model glm-4.6 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-entity your-team-name \
-  --wandb-tags full-dataset bm25 glm-4.6 \
-  --output-dir runs/bm25/glm_compact/ \
-  --num-threads 4
-```
-
-**AWS Bedrock:**
-```bash
-# Ensure AWS credentials are configured first
-python search_agent/bedrock_client.py \
-  --query topics-qrels/queries.tsv \
-  --model anthropic.claude-3-haiku-20240307-v1:0 \
-  --region us-east-1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --wandb-project browsecomp-evaluation \
-  --wandb-entity your-team-name \
-  --wandb-tags full-dataset bm25 bedrock-claude-haiku \
-  --output-dir runs/bm25/bedrock_compact/ \
-  --num-threads 4
-```
-
-#### Disable W&B Logging
-
-To disable W&B logging (useful for local testing or when W&B is unavailable):
-
-```bash
-python search_agent/openai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model gpt-4.1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --no-wandb \
-  --output-dir runs/bm25/gpt_4_1_compact/
-```
-
-### Viewing Results in W&B
-
-1. Go to [wandb.ai/home](https://wandb.ai/home) and navigate to your project
-   - **Personal workspace**: `https://wandb.ai/your-username/browsecomp-evaluation`
-   - **Team workspace**: `https://wandb.ai/team-name/browsecomp-evaluation`
-
-2. Each run shows:
-   - **Metrics**: Per-instance tool calls, token usage, success rates
-   - **Tables**: Queryable instance-level data with all metrics
-   - **Trajectories**: Full conversation history for each instance
-   - **Config**: Experiment configuration (model, searcher type, etc.)
-
-3. **Team collaboration features**:
-   - Compare runs across different team members
-   - Filter by tags to see specific experiments
-   - Export tables for analysis
-   - Share run links with team members
-
-The W&B Tables allow you to filter, sort, and analyze instances by any metric (e.g., "show all instances with >10 search calls" or "instances that failed").
-
-**Pro tip for teams:** Use consistent tagging conventions (e.g., `--wandb-tags member-name model-version date`) to make it easy to find and compare team members' experiments.
-
----
-
-## Model Migration Guide
-
-### Migrating from GLM to AWS Bedrock
-
-If you were previously using GLM and want to switch to AWS Bedrock (Claude models), here's a direct comparison:
-
-**Previous GLM command:**
-```bash
-python search_agent/glm_zai_client.py \
-  --query topics-qrels/queries.tsv \
-  --model glm-4.6 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --query-template QUERY_TEMPLATE_WITH_COMPACT \
-  --output-dir runs/bm25/glm_compact_3/ \
-  --max_tokens 10000 \
-  --max-iterations 100 \
-  --k 5 \
-  --snippet-max-tokens 512 \
-  --num-threads 4
-```
-
-**Equivalent Bedrock command:**
-```bash
-# 1. Set AWS credentials first
-export AWS_ACCESS_KEY_ID=your_access_key
-export AWS_SECRET_ACCESS_KEY=your_secret_key
-export AWS_DEFAULT_REGION=us-east-1
-
-# 2. Run with Bedrock
-python search_agent/bedrock_client.py \
-  --query topics-qrels/queries.tsv \
-  --model anthropic.claude-3-haiku-20240307-v1:0 \
-  --region us-east-1 \
-  --searcher-type bm25 \
-  --index-path indexes/bm25/ \
-  --query-template QUERY_TEMPLATE_WITH_COMPACT \
-  --compact-model anthropic.claude-3-haiku-20240307-v1:0 \
-  --output-dir runs/bm25/bedrock_compact_3/ \
-  --max_tokens 10000 \
-  --max-iterations 100 \
-  --k 5 \
-  --snippet-max-tokens 512 \
-  --num-threads 4
-```
-
-**Key differences:**
-1. **Script name:** `glm_zai_client.py` → `bedrock_client.py`
-2. **Model format:** `glm-4.6` → `anthropic.claude-3-haiku-20240307-v1:0` (Bedrock model ID format)
-3. **Added argument:** `--region us-east-1` (specify AWS region)
-4. **Added argument:** `--compact-model` (required for compact tool)
-5. **Credentials:** GLM API key → AWS credentials (environment variables or AWS CLI config)
-
-**Available Bedrock models:**
-- **Haiku** (fast, economical): `anthropic.claude-3-haiku-20240307-v1:0`
-- **Sonnet** (balanced): `anthropic.claude-3-sonnet-20240229-v1:0`
-- **Sonnet 3.5** (latest): `anthropic.claude-3-5-sonnet-20240620-v1:0`
-- **Opus** (most capable): `anthropic.claude-3-opus-20240229-v1:0`
-
-**Output format:** Same JSON format, compatible with existing evaluation scripts.
+> Other Bedrock models: `anthropic.claude-3-sonnet-20240229-v1:0`, `anthropic.claude-3-5-sonnet-20240620-v1:0`
 
 ---
 
