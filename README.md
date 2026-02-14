@@ -13,6 +13,7 @@ BrowseComp-Plus/
 ├── search_agent/                  # LLM agent clients
 │   ├── openai_client.py           # OpenAI (gpt-4.1, gpt-4o-mini, o3, ...)
 │   ├── anthropic_client.py        # Anthropic (claude-sonnet-4, ...)
+│   ├── bedrock_client.py          # AWS Bedrock (anthropic.claude-3-haiku-..., ...)
 │   ├── glm_zai_client.py          # GLM / Z.AI (glm-4.6, ...)
 │   ├── compact_utils.py           # Compact (summarization) tool logic
 │   ├── prompts.py                 # Query templates
@@ -170,6 +171,12 @@ All three clients follow the same pattern. Pass `--query` with either:
 | `--thinking-budget` | Token budget for extended thinking | `8192` |
 | `--max-rate-limit-retries` | Retries on rate-limit errors | `5` |
 | `--rate-limit-delay` | Delay (seconds) between retries | `60` |
+
+**Bedrock-only:**
+
+| Argument | What it does | Default |
+|---|---|---|
+| `--region` | AWS region for Bedrock | `us-east-1` |
 
 **W&B Logging (all clients):**
 
@@ -337,6 +344,31 @@ python search_agent/glm_zai_client.py \
   --snippet-max-tokens 512
 ```
 
+### AWS Bedrock
+
+```bash
+source .venv/bin/activate
+
+# Ensure AWS credentials are configured (via environment variables or AWS CLI)
+# export AWS_ACCESS_KEY_ID=your_access_key
+# export AWS_SECRET_ACCESS_KEY=your_secret_key
+# export AWS_SESSION_TOKEN=your_session_token  # (optional)
+
+python search_agent/bedrock_client.py \
+  --query "What is the capital of France?" \
+  --model anthropic.claude-3-haiku-20240307-v1:0 \
+  --region us-east-1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --query-template QUERY_TEMPLATE_WITH_COMPACT \
+  --compact-model anthropic.claude-3-haiku-20240307-v1:0 \
+  --output-dir runs/test_bedrock/ \
+  --max_tokens 10000 \
+  --max-iterations 100 \
+  --k 5 \
+  --snippet-max-tokens 512
+```
+
 ---
 
 ## Full Dataset (830 Queries)
@@ -397,6 +429,38 @@ python search_agent/glm_zai_client.py \
   --k 5 \
   --snippet-max-tokens 512 \
   --num-threads 4
+```
+
+### AWS Bedrock
+
+```bash
+# Ensure AWS credentials are configured
+python search_agent/bedrock_client.py \
+  --query topics-qrels/queries.tsv \
+  --model anthropic.claude-3-haiku-20240307-v1:0 \
+  --region us-east-1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --query-template QUERY_TEMPLATE_WITH_COMPACT \
+  --compact-model anthropic.claude-3-haiku-20240307-v1:0 \
+  --output-dir runs/bm25/bedrock_compact/ \
+  --max_tokens 10000 \
+  --max-iterations 100 \
+  --k 5 \
+  --snippet-max-tokens 512 \
+  --num-threads 4
+```
+
+**Alternative models:**
+- Sonnet: `anthropic.claude-3-sonnet-20240229-v1:0`
+- Opus: `anthropic.claude-3-opus-20240229-v1:0`
+- Latest Sonnet: `anthropic.claude-3-5-sonnet-20240620-v1:0`
+
+**Note:** Ensure AWS credentials are set:
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_DEFAULT_REGION=us-east-1
 ```
 
 ---
@@ -560,6 +624,22 @@ python search_agent/glm_zai_client.py \
   --num-threads 4
 ```
 
+**AWS Bedrock:**
+```bash
+# Ensure AWS credentials are configured first
+python search_agent/bedrock_client.py \
+  --query topics-qrels/queries.tsv \
+  --model anthropic.claude-3-haiku-20240307-v1:0 \
+  --region us-east-1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --wandb-project browsecomp-evaluation \
+  --wandb-entity your-team-name \
+  --wandb-tags full-dataset bm25 bedrock-claude-haiku \
+  --output-dir runs/bm25/bedrock_compact/ \
+  --num-threads 4
+```
+
 #### Disable W&B Logging
 
 To disable W&B logging (useful for local testing or when W&B is unavailable):
@@ -595,6 +675,69 @@ python search_agent/openai_client.py \
 The W&B Tables allow you to filter, sort, and analyze instances by any metric (e.g., "show all instances with >10 search calls" or "instances that failed").
 
 **Pro tip for teams:** Use consistent tagging conventions (e.g., `--wandb-tags member-name model-version date`) to make it easy to find and compare team members' experiments.
+
+---
+
+## Model Migration Guide
+
+### Migrating from GLM to AWS Bedrock
+
+If you were previously using GLM and want to switch to AWS Bedrock (Claude models), here's a direct comparison:
+
+**Previous GLM command:**
+```bash
+python search_agent/glm_zai_client.py \
+  --query topics-qrels/queries.tsv \
+  --model glm-4.6 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --query-template QUERY_TEMPLATE_WITH_COMPACT \
+  --output-dir runs/bm25/glm_compact_3/ \
+  --max_tokens 10000 \
+  --max-iterations 100 \
+  --k 5 \
+  --snippet-max-tokens 512 \
+  --num-threads 4
+```
+
+**Equivalent Bedrock command:**
+```bash
+# 1. Set AWS credentials first
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_DEFAULT_REGION=us-east-1
+
+# 2. Run with Bedrock
+python search_agent/bedrock_client.py \
+  --query topics-qrels/queries.tsv \
+  --model anthropic.claude-3-haiku-20240307-v1:0 \
+  --region us-east-1 \
+  --searcher-type bm25 \
+  --index-path indexes/bm25/ \
+  --query-template QUERY_TEMPLATE_WITH_COMPACT \
+  --compact-model anthropic.claude-3-haiku-20240307-v1:0 \
+  --output-dir runs/bm25/bedrock_compact_3/ \
+  --max_tokens 10000 \
+  --max-iterations 100 \
+  --k 5 \
+  --snippet-max-tokens 512 \
+  --num-threads 4
+```
+
+**Key differences:**
+1. **Script name:** `glm_zai_client.py` → `bedrock_client.py`
+2. **Model format:** `glm-4.6` → `anthropic.claude-3-haiku-20240307-v1:0` (Bedrock model ID format)
+3. **Added argument:** `--region us-east-1` (specify AWS region)
+4. **Added argument:** `--compact-model` (required for compact tool)
+5. **Credentials:** GLM API key → AWS credentials (environment variables or AWS CLI config)
+
+**Available Bedrock models:**
+- **Haiku** (fast, economical): `anthropic.claude-3-haiku-20240307-v1:0`
+- **Sonnet** (balanced): `anthropic.claude-3-sonnet-20240229-v1:0`
+- **Sonnet 3.5** (latest): `anthropic.claude-3-5-sonnet-20240620-v1:0`
+- **Opus** (most capable): `anthropic.claude-3-opus-20240229-v1:0`
+
+**Output format:** Same JSON format, compatible with existing evaluation scripts.
 
 ---
 

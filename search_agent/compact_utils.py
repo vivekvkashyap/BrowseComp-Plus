@@ -216,3 +216,69 @@ def call_compact_anthropic(client, model: str, history_text: str, compact_prompt
         }
 
     return summary, usage
+
+
+def call_compact_bedrock(client, model_id: str, history_text: str, compact_prompt: str | None = None) -> tuple[str, dict]:
+    """Call AWS Bedrock Runtime API (boto3) to produce a summary of the
+    conversation history using Claude models.
+
+    Args:
+        client: boto3 bedrock-runtime client
+        model_id: Bedrock model ID (e.g., anthropic.claude-3-haiku-20240307-v1:0)
+        history_text: The conversation history to summarize
+        compact_prompt: Optional custom prompt (defaults to COMPACT_PROMPT)
+
+    Returns:
+        (summary_text, usage_dict) where usage_dict has input_tokens,
+        output_tokens, total_tokens from the summarizer call.
+    """
+    prompt = compact_prompt or COMPACT_PROMPT
+
+    # Format the request payload using Claude's messages API
+    native_request = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 4096,
+        "system": prompt,
+        "messages": [
+            {
+                "role": "user",
+                "content": f"Here is the full conversation history to summarize:\n\n{history_text}"
+            }
+        ],
+        "temperature": 0.3,
+    }
+
+    # Convert the native request to JSON
+    request_body = json.dumps(native_request)
+
+    # Invoke the model
+    response = client.invoke_model(
+        modelId=model_id,
+        body=request_body,
+        contentType="application/json",
+        accept="application/json"
+    )
+
+    # Decode the response body
+    model_response = json.loads(response["body"].read())
+
+    # Extract text from content blocks
+    parts = []
+    for block in model_response.get("content", []):
+        if block.get("type") == "text":
+            parts.append(block.get("text", ""))
+    summary = "\n".join(parts).strip()
+
+    # Extract usage information
+    usage: dict = {}
+    if "usage" in model_response:
+        usage_data = model_response["usage"]
+        in_tok = usage_data.get("input_tokens", 0) or 0
+        out_tok = usage_data.get("output_tokens", 0) or 0
+        usage = {
+            "input_tokens": in_tok,
+            "output_tokens": out_tok,
+            "total_tokens": in_tok + out_tok,
+        }
+
+    return summary, usage
